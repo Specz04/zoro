@@ -72,6 +72,8 @@ type Tuning struct {
 	HouseAcc       bool    // against the squad, use the house bots' measured hit rates by range
 	IsoW           float64 // in a fight: cost per other recently seen mech that could see a position (0 = off)
 	KillUps        bool    // upgrade order that puts our damage (laser damage, gun magazine) first
+	Ambush         float64 // against the squad, watch a landing supply drop from about this far (0 = off)
+	AmbushHP       float64 // ... only above this share of our health
 	SquadKiteMin   float64
 	SquadKiteMax   float64
 
@@ -179,6 +181,8 @@ func Defaults() Tuning {
 		HouseAcc:       true,
 		IsoW:           0,
 		KillUps:        false,
+		Ambush:         60,
+		AmbushHP:       0.6,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 

@@ -159,6 +159,7 @@ type Pilot struct {
 	pinnedRoof bool
 	lob        lobby
 	prevCharge float64 // our laser's charge in the previous observation
+	amb        ambushPlan
 	seekBans   map[int]float64
 	jinkDir    float64
 	jinkT      float64

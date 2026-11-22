@@ -345,3 +345,96 @@ func (p *Pilot) isolate(tn *turn) {
 		return cost
 	}
 }
+
+// ambushPlan is a firing post over a supply drop. House bots run to drops and must stand still in
+// the ring to capture them: from a post with a clear line onto the ring they are easy kills.
+type ambushPlan struct {
+	drop     int
+	ring     [2]float64
+	spot     [2]float64
+	at       float64 // when the post was chosen
+	ok       bool
+	landedAt map[int]float64
+}
+
+// ambushSpot returns the post to hold for the most promising drop, if one is worth watching now.
+func (p *Pilot) ambushSpot(tn *turn) ([2]float64, bool) {
+	a := &p.amb
+	if p.T.Ambush <= 0 || !tn.st.squad || tn.hpFrac < p.T.AmbushHP || tn.engaged > 0 {
+		a.ok = false
+		return [2]float64{}, false
+	}
+	if a.landedAt == nil {
+		a.landedAt = map[int]float64{}
+	}
+	var best *wire.Drop
+	bd := 320.0
+	for i := range p.o.Drops {
+		dr := &p.o.Drops[i]
+		if dr.Holder != nil && *dr.Holder == p.o.Self.ID {
+			continue
+		}
+		if dr.LandsIn > 25 {
+			continue
+		}
+		if dr.LandsIn <= 0 {
+			if _, seen := a.landedAt[dr.ID]; !seen {
+				a.landedAt[dr.ID] = p.now
+			}
+			if p.now-a.landedAt[dr.ID] > 30 {
+				continue // captured or abandoned by now
+			}
+		}
+		if !p.safeLater(dr.Pos[0], dr.Pos[1], 35, 15) {
+			continue
+		}
+		if d := flatDist(p.pos, dr.Pos); d < bd {
+			best, bd = dr, d
+		}
+	}
+	if best == nil {
+		a.ok = false
+		return [2]float64{}, false
+	}
+	if !a.ok || a.drop != best.ID || p.now-a.at > 3 {
+		a.drop, a.at, a.ring = best.ID, p.now, [2]float64{best.Pos[0], best.Pos[1]}
+		a.ok = p.choosePost(best)
+	}
+	return a.spot, a.ok
+}
+
+// choosePost picks a standable spot about Ambush metres from the ring with a clear view of it,
+// inside the zone for a while, away from mechs seen lately, and as short a walk as possible.
+func (p *Pilot) choosePost(dr *wire.Drop) bool {
+	a := &p.amb
+	ringZ := p.g.Map.Floor(dr.Pos[0], dr.Pos[1], dr.Pos[2]+2) + 4.5
+	bestScore := math.Inf(1)
+	for _, r := range [...]float64{p.T.Ambush, p.T.Ambush * 0.8, p.T.Ambush * 1.25} {
+		for k := 0; k < 16; k++ {
+			ang := float64(k) * math.Pi / 8
+			x, y := dr.Pos[0]+r*math.Cos(ang), dr.Pos[1]+r*math.Sin(ang)
+			cell := p.g.Closest(x, y, p.radius+0.3, p.height, 2)
+			if cell < 0 || !p.inMyRegion(cell) {
+				continue
+			}
+			x, y = p.g.Pos(cell)
+			if !p.safeLater(x, y, 35, 12) {
+				continue
+			}
+			feet := float64(p.g.Floor[cell])
+			if !p.m.Clear(x, y, feet+p.eye, dr.Pos[0], dr.Pos[1], ringZ) {
+				continue
+			}
+			score := length(x-p.pos[0], y-p.pos[1])
+			for _, c := range p.contacts {
+				if !c.Drone && p.now-c.SeenT < 5 && length(c.Pos[0]-x, c.Pos[1]-y) < 50 {
+					score += 120
+				}
+			}
+			if score < bestScore {
+				bestScore, a.spot = score, [2]float64{x, y}
+			}
+		}
+	}
+	return !math.IsInf(bestScore, 1)
+}

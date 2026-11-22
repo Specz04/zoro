@@ -665,6 +665,13 @@ func (p *Pilot) kiteFrom(tn *turn) *threat {
 
 // modeIdle is looting, then exploring, then waiting (on a roof or in a sheltered spot).
 func (p *Pilot) modeIdle(tn *turn) {
+	if spot, ok := p.ambushSpot(tn); ok {
+		p.mode = "ambush"
+		if p.walkTo(tn, spot[0], spot[1], 1.8, false) < 2.5 {
+			tn.settle()
+		}
+		return
+	}
 	e := p.pickErrand(tn.danger, tn.st)
 	if e != nil && tn.onRoof && tn.roofPlan && e.kind != "drop" {
 		// hidden on a roof: only a laser close by is worth coming down for
@@ -830,6 +837,9 @@ func (p *Pilot) aimAndFire(cmd *wire.Command, tn *turn) {
 		p.shoot(cmd, p.markOf(tgt.c), tgt.c.Visible, false, tgt.c.HP, false) // watch it, do not provoke
 	default:
 		p.lookAround(cmd, tn.heading, tn.hasHeading)
+		if p.mode == "ambush" && p.amb.ok {
+			cmd.Aim = [2]float64{math.Atan2(p.amb.ring[1]-p.pos[1], p.amb.ring[0]-p.pos[0]), 0}
+		}
 		p.topUp(cmd, tn)
 		if g := p.holding("gun"); g >= 0 {
 			if sl := &p.slots[g]; sl.reload <= 0 && sl.ammo < sl.stats.Get("mag", 12)*0.67 {
