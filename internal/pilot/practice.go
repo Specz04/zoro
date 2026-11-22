@@ -438,3 +438,73 @@ func (p *Pilot) choosePost(dr *wire.Drop) bool {
 	}
 	return !math.IsInf(bestScore, 1)
 }
+
+// dropRingR is the capture radius of a supply drop.
+func (p *Pilot) dropRingR() float64 {
+	return 8 // the protocol's default ring; observations do not repeat it
+}
+
+// freeDrop returns a landed drop worth capturing now: nobody holding it but us, no mech seen near it
+// in the last few seconds, inside the zone for a while, and within an easy walk. inside reports
+// whether we already stand in its ring.
+func (p *Pilot) freeDrop(tn *turn) (ring [2]float64, inside, ok bool) {
+	if !p.T.DropTake || !tn.st.squad || tn.engaged > 0 {
+		return ring, false, false
+	}
+	bd := 140.0
+	for i := range p.o.Drops {
+		dr := &p.o.Drops[i]
+		if dr.LandsIn > 0.5 {
+			continue
+		}
+		if dr.Holder != nil && *dr.Holder != p.o.Self.ID {
+			continue // someone else is capturing it: that is the ambush's business
+		}
+		d := flatDist(p.pos, dr.Pos)
+		if d > bd || !p.safeLater(dr.Pos[0], dr.Pos[1], 15, 6) || !p.walkable(dr.Pos[0], dr.Pos[1]) {
+			continue
+		}
+		contested := false
+		for _, c := range p.contacts {
+			if !c.Drone && p.now-c.SeenT < 4 && flatDist(c.Pos, dr.Pos) < 45 {
+				contested = true
+				break
+			}
+		}
+		if contested && !(dr.Holder != nil && *dr.Holder == p.o.Self.ID) {
+			continue
+		}
+		bd, ring, ok = d, [2]float64{dr.Pos[0], dr.Pos[1]}, true
+		inside = d <= p.dropRingR()-1.5
+	}
+	return ring, inside, ok
+}
+
+// ringLob sends mortar shells onto a drop ring that someone else is capturing: whoever it is has to
+// stand still in it for the whole capture, and a shell needs no line of sight.
+func (p *Pilot) ringLob(cmd *wire.Command, tn *turn) {
+	mor := p.holding("mortar")
+	if !p.T.RingLob || mor < 0 || !tn.st.squad || p.slots[mor].cooldown > 0.15 {
+		return
+	}
+	st := p.slots[mor].stats
+	for i := range p.o.Drops {
+		dr := &p.o.Drops[i]
+		if dr.LandsIn > 0 || dr.Holder == nil || *dr.Holder == p.o.Self.ID {
+			continue
+		}
+		d := flatDist(p.pos, dr.Pos)
+		if d < st.Get("splash_radius", 7)+p.radius+6 || d > 180 {
+			continue
+		}
+		s := p.lobShot(mark{pos: dr.Pos, radius: st.Get("splash_radius", 7), centre: 0}, st)
+		if !s.ok {
+			continue
+		}
+		cmd.Aim, cmd.AimSet = [2]float64{s.yaw, s.pitch}, true
+		if ey, ep := p.slewErr(s); p.slots[mor].cooldown <= 0.05 && ey < 0.03 && ep < 0.02 {
+			cmd.Fire[mor] = true
+		}
+		return
+	}
+}

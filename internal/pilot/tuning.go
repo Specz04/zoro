@@ -74,6 +74,8 @@ type Tuning struct {
 	KillUps        bool    // upgrade order that puts our damage (laser damage, gun magazine) first
 	Ambush         float64 // against the squad, watch a landing supply drop from about this far (0 = off)
 	AmbushHP       float64 // ... only above this share of our health
+	DropTake       bool    // against the squad, capture a landed drop nobody is contesting (full repair, cubes)
+	RingLob        bool    // against the squad, lob mortar shells onto a drop ring someone else is capturing
 	SquadKiteMin   float64
 	SquadKiteMax   float64
 
@@ -183,6 +185,8 @@ func Defaults() Tuning {
 		KillUps:        false,
 		Ambush:         60,
 		AmbushHP:       0.6,
+		DropTake:       true,
+		RingLob:        true,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 

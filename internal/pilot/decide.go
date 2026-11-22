@@ -665,6 +665,15 @@ func (p *Pilot) kiteFrom(tn *turn) *threat {
 
 // modeIdle is looting, then exploring, then waiting (on a roof or in a sheltered spot).
 func (p *Pilot) modeIdle(tn *turn) {
+	if ring, inside, ok := p.freeDrop(tn); ok {
+		p.mode = "drop-take"
+		if inside {
+			tn.settle() // in the ring: stand still until the capture completes
+		} else {
+			p.walkTo(tn, ring[0], ring[1], 2, p.energy > 30)
+		}
+		return
+	}
 	if spot, ok := p.ambushSpot(tn); ok {
 		p.mode = "ambush"
 		if p.walkTo(tn, spot[0], spot[1], 1.8, false) < 2.5 {
@@ -840,6 +849,7 @@ func (p *Pilot) aimAndFire(cmd *wire.Command, tn *turn) {
 		if p.mode == "ambush" && p.amb.ok {
 			cmd.Aim = [2]float64{math.Atan2(p.amb.ring[1]-p.pos[1], p.amb.ring[0]-p.pos[0]), 0}
 		}
+		p.ringLob(cmd, tn)
 		p.topUp(cmd, tn)
 		if g := p.holding("gun"); g >= 0 {
 			if sl := &p.slots[g]; sl.reload <= 0 && sl.ammo < sl.stats.Get("mag", 12)*0.67 {
