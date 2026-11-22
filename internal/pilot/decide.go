@@ -104,9 +104,6 @@ func (p *Pilot) pickTarget(tn *turn) {
 			s *= 1.6
 		}
 		s *= p.killValue(t)
-		if p.closeToKill(tn, t) {
-			s *= p.T.FinishPrefer
-		}
 		if t.c.ID == p.targetID {
 			s *= 1.2
 			if p.now-t.c.IHitT < 4 {
@@ -190,10 +187,6 @@ func (p *Pilot) updateRetreat(tn *turn) {
 	}
 	// never walk away from a kill one burst from done
 	if tgt != nil && tgt.c.Listed && p.nearlyDead(tgt, 1.2, 40) && tn.hpFrac > 0.12 {
-		p.retreating = false
-	}
-	// against the squad, nor from one that is well on the way: what we leave behind heals back
-	if p.closeToKill(tn, tgt) || (p.T.SquadStand && tn.st.squad) {
 		p.retreating = false
 	}
 }

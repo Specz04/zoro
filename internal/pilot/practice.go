@@ -438,12 +438,3 @@ func (p *Pilot) choosePost(dr *wire.Drop) bool {
 	}
 	return !math.IsInf(bestScore, 1)
 }
-
-// closeToKill reports whether, against the squad, t is a visible target low enough on health, near
-// enough and with us healthy enough that it should be finished before anything else.
-func (p *Pilot) closeToKill(tn *turn, t *threat) bool {
-	if p.T.FinishFrac <= 0 || !tn.st.squad || t == nil || !t.c.Visible || !t.c.Listed || t.c.MaxHP <= 0 {
-		return false
-	}
-	return t.c.HP < p.T.FinishFrac*t.c.MaxHP && t.d < p.T.FinishReach && tn.hpFrac > p.T.FinishFloor
-}
