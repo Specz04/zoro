@@ -9,8 +9,27 @@ var (
 	theirGunHits = curve{{30, 0.92}, {60, 0.78}, {100, 0.57}, {150, 0.32}, {200, 0.15}, {230, 0.10}}
 )
 
-// laserHitRate is the share of laser shots that land (misses are mostly beams stopped by cover).
-const laserHitRate = 0.75
+// Against the house squad the exchange looks different: they barely dodge (our gun keeps hitting
+// at range) and their own accuracy falls off quickly with distance.
+var (
+	squadOurGunHits   = curve{{60, 0.95}, {120, 0.83}, {180, 0.73}, {230, 0.58}, {230.01, 0.05}}
+	squadTheirGunHits = curve{{40, 0.97}, {80, 0.85}, {120, 0.45}, {180, 0.25}, {180.01, 0.12}}
+)
+
+// laserRate is the share of laser shots that land (misses are mostly beams stopped by cover).
+func (p *Pilot) laserRate() float64 {
+	if p.practice() {
+		return 0.85
+	}
+	return 0.75
+}
+
+func (p *Pilot) gunCurves() (ours, theirs curve) {
+	if p.practice() {
+		return squadOurGunHits, squadTheirGunHits
+	}
+	return ourGunHits, theirGunHits
+}
 
 // loadout is what a mech carries, for damage estimates.
 type loadout struct {
@@ -32,7 +51,7 @@ func (p *Pilot) dps(l loadout, d float64, gunHits curve) float64 {
 	if l.laser {
 		w := p.cfg.Weapon("laser")
 		if d < w.Get("range", 280) {
-			total += w.Get("damage", 315) / (w.Get("charge", 0.75) + w.Get("cooldown", 1.65)) * laserHitRate
+			total += w.Get("damage", 315) / (w.Get("charge", 0.75) + w.Get("cooldown", 1.65)) * p.laserRate()
 		}
 	}
 	if l.arc && l.arcPower {
@@ -58,7 +77,8 @@ func (p *Pilot) ourDPS(d float64) float64 {
 		cubes:    p.o.Self.Cubes,
 		arcPower: p.energy > 15,
 	}
-	return p.dps(l, d, ourGunHits)
+	ours, _ := p.gunCurves()
+	return p.dps(l, d, ours)
 }
 
 // theirDPS is a contact's damage rate on us at range d (before our armour).
@@ -74,7 +94,8 @@ func (p *Pilot) theirDPS(c *Contact, d float64) float64 {
 	if a := p.holding("lightning"); a >= 0 && p.energy > 20 && d < p.slots[a].stats.Get("range", 45)-3 {
 		l.laser = false
 	}
-	return p.dps(l, d, theirGunHits)
+	_, theirs := p.gunCurves()
+	return p.dps(l, d, theirs)
 }
 
 // odds evaluates a fight with c at several ranges, paying for the trip to each, and returns the

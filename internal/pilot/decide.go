@@ -49,6 +49,7 @@ type turn struct {
 func (p *Pilot) decide(cmd *wire.Command) {
 	p.chooseUpgrade(cmd)
 	p.grabWeapon(cmd)
+	p.readLobby()
 	tn := &turn{st: p.stance(), zi: p.zone(), ths: p.assess(), hpFrac: p.hp / p.maxHP, goalOK: true}
 	tn.lg.shells = p.incoming()
 	p.pickTarget(tn)
@@ -141,15 +142,19 @@ func (p *Pilot) weighFight(tn *turn) {
 
 // updateRetreat starts or ends a retreat.
 func (p *Pilot) updateRetreat(tn *turn) {
+	retreatHP, returnHP, swarmTTD, duelLeave := p.T.RetreatHP, p.T.ReturnHP, p.T.SwarmTTD, p.T.DuelLeave
+	if tn.st.squad {
+		retreatHP, returnHP, swarmTTD, duelLeave = p.T.SquadRetreatHP, p.T.SquadReturnHP, p.T.SquadSwarmTTD, p.T.SquadDuelLeave
+	}
 	tgt := tn.tgt
 	seenFoe := tgt != nil && tgt.engaged && tgt.c.Visible && tgt.c.Listed
 	knownFoe := tgt != nil && tgt.engaged && tgt.c.Listed
 	if p.retreating {
 		winnable := tn.overall > math.Max(tn.st.disengage*1.25, 0.95)
 		switch {
-		case tn.hpFrac >= p.T.ReturnHP && (!tn.danger || winnable):
+		case tn.hpFrac >= returnHP && (!tn.danger || winnable):
 			p.retreating = false
-		case !tn.danger && tn.hpFrac >= p.T.ReturnHP-0.1:
+		case !tn.danger && tn.hpFrac >= returnHP-0.1:
 			p.retreating = false
 		case winnable && tn.hpFrac > 0.3 && tn.engaged <= 1 && knownFoe:
 			p.retreating = false // the odds turned
@@ -168,11 +173,11 @@ func (p *Pilot) updateRetreat(tn *turn) {
 		leave := false
 		switch {
 		case tn.engaged <= 1 && knownFoe:
-			leave = tn.overall < p.T.DuelLeave && tgt.d > 30 && ttd < 25
+			leave = tn.overall < duelLeave && tgt.d > 30 && ttd < 25
 		case tn.engaged >= 2:
-			leave = (ttd < p.T.SwarmTTD && tn.hpFrac < 0.8) || (tn.hpFrac < p.T.RetreatHP && ttd < 2*p.T.SwarmTTD)
+			leave = (ttd < swarmTTD && tn.hpFrac < 0.8) || (tn.hpFrac < retreatHP && ttd < 2*swarmTTD)
 		default:
-			leave = tn.hurting && ghosts > 0 && (ttd < 1.5*p.T.SwarmTTD || tn.hpFrac < 0.6)
+			leave = tn.hurting && ghosts > 0 && (ttd < 1.5*swarmTTD || tn.hpFrac < 0.6)
 		}
 		if leave {
 			p.retreating, p.retreatT, p.coverCell = true, p.now, -1
@@ -195,7 +200,7 @@ func (p *Pilot) chooseIntent(tn *turn) {
 		p.carefulResponse(tn)
 	case tgt.engaged:
 		tn.fight = true
-	case tgt.adv >= tn.st.engage && tgt.d < p.T.HuntRange && tgt.c.Visible && tn.hpFrac > p.T.HuntHP &&
+	case tgt.adv >= tn.st.engage && tgt.d < p.huntRange(tn.st) && tgt.c.Visible && tn.hpFrac > p.T.HuntHP &&
 		(!tn.st.careful || p.laserEdge(tgt.c) || tgt.adv >= p.T.BigEdge):
 		tn.fight = true // a hunt: only with a laser against none, or overwhelming odds
 	case tn.st.duel && tn.hpFrac > 0.5:
@@ -607,7 +612,7 @@ func (p *Pilot) modeFight(tn *turn) {
 // kiteFrom returns the nearest attacker to back away from when two or more are on us and we hold a
 // laser (nil: do not kite).
 func (p *Pilot) kiteFrom(tn *turn) *threat {
-	if tn.engaged < 2 || p.T.KiteMin <= 0 || p.holding("laser") < 0 {
+	if tn.engaged < 2 || p.T.KiteMin <= 0 || (!tn.st.squad && p.holding("laser") < 0) {
 		return nil
 	}
 	var near *threat
@@ -783,4 +788,15 @@ func (p *Pilot) aimAndFire(cmd *wire.Command, tn *turn) {
 			cmd.Fire[las] = true
 		}
 	}
+}
+
+// huntRange is how far we go after a favourable target that is not on us.
+func (p *Pilot) huntRange(st stance) float64 {
+	if !st.squad {
+		return p.T.HuntRange
+	}
+	if p.holding("laser") >= 0 {
+		return p.T.SquadHuntLaser
+	}
+	return p.T.SquadHunt
 }

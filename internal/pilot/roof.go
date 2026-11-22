@@ -47,7 +47,7 @@ func (p *Pilot) banRoof(id int, secs float64) {
 
 // wantRoof reports whether waiting on a roof is the plan once nothing else needs doing.
 func (p *Pilot) wantRoof(st stance, zi zoneView) bool {
-	if !p.T.UseRoofs || st.duel || zi.final || p.o.Zone.NextRadius < p.T.RoofMinZone {
+	if !p.T.UseRoofs || st.duel || st.squad || zi.final || p.o.Zone.NextRadius < p.T.RoofMinZone {
 		return false
 	}
 	return p.holding("laser") >= 0 || p.o.Self.Cubes >= p.T.RoofCubes || p.now >= p.T.RoofAfter

@@ -30,9 +30,9 @@ func (p *Pilot) worth(kind string) float64 {
 }
 
 // wants reports whether we would take a weapon kind and which slot it replaces (-1: a free slot).
-// Mortars are never taken: carrying one makes every laser hit on us much worse.
+// Mortars are taken only against the house squad: carrying one makes every laser hit on us worse.
 func (p *Pilot) wants(kind string) (bool, int) {
-	if kind == "mortar" || p.holding(kind) >= 0 {
+	if (kind == "mortar" && !p.practice()) || p.holding(kind) >= 0 {
 		return false, -1
 	}
 	for i := range p.slots {

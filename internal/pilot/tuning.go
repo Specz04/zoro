@@ -33,6 +33,17 @@ type Tuning struct {
 	StrafeMin     float64
 	StrafeMax     float64
 
+	// practice (the house squad)
+	OpeningSecs    float64 // play the careful stance this long before assuming the squad
+	SquadEngage    float64 // hunt targets at this advantage or better
+	SquadHunt      float64 // ... inside this range
+	SquadHuntLaser float64 // ... or this one with a laser
+	SquadCubes     int
+	SquadRetreatHP float64 // the retreat thresholds against the squad (holding a fight pays there)
+	SquadReturnHP  float64
+	SquadSwarmTTD  float64
+	SquadDuelLeave float64
+
 	// cover after the first hidden spot
 	DeepMargin float64 // cover must survive the threat side-stepping this far
 	DeepRange  float64 // hurt with the attacker inside this range: keep going deeper
@@ -97,6 +108,16 @@ func Defaults() Tuning {
 		LeadEvidence:  8,
 		StrafeMin:     0.35,
 		StrafeMax:     1.1,
+
+		OpeningSecs:    24,
+		SquadEngage:    0.9,
+		SquadHunt:      180,
+		SquadHuntLaser: 200,
+		SquadCubes:     15,
+		SquadRetreatHP: 0.2,
+		SquadReturnHP:  0.6,
+		SquadSwarmTTD:  4,
+		SquadDuelLeave: 0.35,
 
 		DeepMargin: 8,
 		DeepRange:  80,

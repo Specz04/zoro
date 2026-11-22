@@ -29,7 +29,8 @@ type solution struct {
 	ok         bool
 	yaw, pitch float64
 	dist       float64
-	clear      bool // no solid between muzzle and target
+	flight     float64 // seconds (lobbed shells only)
+	clear      bool    // no solid between muzzle and target
 }
 
 // solve aims a straight shot of the given speed (0 = instant) at m, from our muzzle, with the
@@ -119,11 +120,25 @@ func (p *Pilot) shoot(cmd *wire.Command, m mark, seen, recent bool, hpLeft float
 	if gun >= 0 {
 		track, trackGun = gunS, true
 	}
+	laserReady := false
 	if las >= 0 {
 		sl := &p.slots[las]
-		ready := sl.charge > 0 && (sl.charge >= sl.stats.Get("charge", 0.75)-0.16 || p.laserHit(sl.stats, sl.charge+0.1) >= hpLeft)
-		if ready || gun < 0 {
+		laserReady = sl.charge > 0 && (sl.charge >= sl.stats.Get("charge", 0.75)-0.16 || p.laserHit(sl.stats, sl.charge+0.1) >= hpLeft)
+		if laserReady || gun < 0 {
 			track, trackGun = beamS, false
+		}
+	}
+	// a shell wants its own pitched aim: take it when it is likely to land and the laser is not about
+	// to fire (or the gun cannot shoot anyway)
+	var lobS solution
+	lobbing := false
+	if mor := p.holding("mortar"); mor >= 0 && fire {
+		sl := &p.slots[mor]
+		if lobS = p.lobShot(m, sl.stats); lobS.ok && sl.cooldown <= 0.15 && !laserReady {
+			gunIdle := gun < 0 || p.slots[gun].reload > 0 || p.slots[gun].ammo == 0 || !gunS.clear || gunS.dist > p.T.GunMaxRange
+			if p.lobWorth(m, lobS, sl.stats) || (gunIdle && lobS.dist > 25) {
+				track, trackGun, lobbing = lobS, false, true
+			}
 		}
 	}
 	if !track.ok {
@@ -139,6 +154,13 @@ func (p *Pilot) shoot(cmd *wire.Command, m mark, seen, recent bool, hpLeft float
 	}
 	if las >= 0 {
 		p.fireLaser(cmd, las, m, beamS, seen, recent, hpLeft, pitchTol, fire)
+	}
+	if lobbing {
+		if mor := p.holding("mortar"); p.slots[mor].cooldown <= 0.05 {
+			if ey, ep := p.slewErr(lobS); ey < 0.03 && ep < 0.02 {
+				cmd.Fire[mor] = true
+			}
+		}
 	}
 	if arc >= 0 && fire {
 		sl := &p.slots[arc]
@@ -195,7 +217,7 @@ func (p *Pilot) fireLaser(cmd *wire.Command, i int, m mark, s solution, seen, re
 		cmd.Fire[i] = hold
 		return
 	}
-	if fire && m.mech && sl.cooldown <= 0.12 && inRange && (seen || recent) {
+	if fire && (m.mech || p.practice()) && sl.cooldown <= 0.12 && inRange && (seen || recent) {
 		cmd.Fire[i] = true
 	}
 }

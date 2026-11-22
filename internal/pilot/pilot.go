@@ -155,6 +155,7 @@ type Pilot struct {
 	duckHoldT  float64
 	holdClimb  bool
 	pinnedRoof bool
+	lob        lobby
 }
 
 // New builds a pilot for the match announced by h.

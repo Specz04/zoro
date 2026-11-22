@@ -158,9 +158,21 @@ func (s *session) build(h *wire.Hello) (b brain) {
 			continue
 		}
 		g := grid.Build(m, h.Config.Mech.Get("step_up", 1.2), h.Config.Mech.Get("height", 9))
-		return pilot.New(h, m, g, pilot.Defaults())
+		return pilot.New(h, m, g, tuning())
 	}
 	return fallback{}
+}
+
+// tuning returns the defaults, with overrides from ZORO_TUNE (a JSON object of Tuning fields) for
+// local experiments. Matches never set it.
+func tuning() pilot.Tuning {
+	t := pilot.Defaults()
+	if v := os.Getenv("ZORO_TUNE"); v != "" {
+		if err := json.Unmarshal([]byte(v), &t); err != nil {
+			logf("ZORO_TUNE: %v", err)
+		}
+	}
+	return t
 }
 
 func (s *session) observe(line []byte) {

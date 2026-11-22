@@ -182,6 +182,7 @@ func (p *Pilot) event(e *wire.Event) {
 	case "damaged":
 		p.damaged(e)
 	case "hit":
+		p.noteHit(e.Target)
 		if c := p.contacts[e.Target]; c != nil {
 			c.IHitT = p.now
 			c.IHit += e.Amount
