@@ -134,7 +134,7 @@ func Defaults() Tuning {
 		SquadReturnHP:  0.6,
 		SquadSwarmTTD:  4,
 		SquadDuelLeave: 0.35,
-		DropRun:        420,
+		DropRun:        0,
 		DropRunHP:      0.85,
 		DropRunLead:    4,
 		Seek:           30,
@@ -144,7 +144,7 @@ func Defaults() Tuning {
 		PatientSecs:    0,
 		PatientCubes:   10,
 		PatientRange:   70,
-		SquadKite:      false,
+		SquadKite:      true,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 
