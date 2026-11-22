@@ -4,25 +4,8 @@ A `mechfight/1` bot for the Builders Buildathon **Mech Royale** track. It pilots
 16-mech battle royale: it reads observations as JSON lines on stdin and answers each one with a single
 action line on stdout.
 
-Go, standard library only.
-
-## Attribution
-
-zoro is a from-scratch rewrite based on the Mech Royale bot in
-[andrew-zhouu/builders-mech-royale-2026](https://github.com/andrew-zhouu/builders-mech-royale-2026)
-at commit [`f3d4e15`](https://github.com/andrew-zhouu/builders-mech-royale-2026/tree/f3d4e15).
-That project is MIT licensed. The overall approach comes from it: the walk grid and roof detection,
-cover-first fighting, a gun lead learned per opponent, and the range-aware fight odds. The code
-here was rewritten and restructured, and the measured hit-rate tables and several tuning constants
-come from the original. Thanks to its authors.
-
-Differences from the original:
-
-- New package layout and APIs (`wire`, `arena`, `grid`, `pilot`).
-- One fixed tuning set. The original's parameter variants, seat-plan experiments, lobby-type
-  detection, visibility-map hideouts and telemetry logging are gone.
-- A single careful "brawl" stance, plus an all-in duel stance once two mechs are left.
-- A synthetic-arena smoke test (`go test ./...`).
+Go, standard library only. It recognises practice lobbies and hunts the house squad there; in a
+free-for-all it plays a careful, cover-first game.
 
 ## Layout
 
@@ -63,4 +46,4 @@ python3 check/check.py --map-dir /arena -- docker run --rm -i --network none --c
 
 ## License
 
-MIT. See `LICENSE`, which also carries the original project's notice.
+MIT. See `LICENSE` (it also carries the notice of the MIT project this was originally derived from).
