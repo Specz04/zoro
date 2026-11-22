@@ -196,6 +196,10 @@ func (p *Pilot) chooseIntent(tn *turn) {
 	if tgt == nil || p.retreating {
 		return
 	}
+	if p.patient(tn) && tn.engaged <= 1 && tgt.d > p.T.PatientRange && tn.hpFrac > 0.55 {
+		tn.holdFire = true // building up: killing hunters only brings more of them
+		return
+	}
 	switch {
 	case tgt.engaged && tn.st.careful:
 		p.carefulResponse(tn)
@@ -615,6 +619,9 @@ func (p *Pilot) modeFight(tn *turn) {
 		near, far := tgt.near, tgt.far
 		if far <= 0 {
 			near, far = 30, 55
+		}
+		if tn.st.squad && p.T.SquadKite && p.holding("laser") >= 0 && tgt.c.Visible {
+			near, far = p.T.SquadKiteMin, p.T.SquadKiteMax // their accuracy falls off with range, a laser's does not
 		}
 		p.circle(&tn.lg, tgt.c.Pos, near, far, 1.6)
 		if p.holding("lightning") >= 0 && tgt.d > far+10 && p.energy > 55 {

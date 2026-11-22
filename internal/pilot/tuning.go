@@ -51,6 +51,12 @@ type Tuning struct {
 	SeekRange      float64
 	SeekHP         float64
 	Jink           float64 // sideways share of the heading when walking under fire from range (0 = off)
+	PatientSecs    float64 // against the squad, until this time build up instead of killing far-off hunters (0 = off)
+	PatientCubes   int     // ... unless we already have this many cubes and a laser
+	PatientRange   float64 // ... a hunter closer than this is fought anyway
+	SquadKite      bool    // against the squad, with a laser, fight from SquadKiteMin..SquadKiteMax
+	SquadKiteMin   float64
+	SquadKiteMax   float64
 
 	// cover after the first hidden spot
 	DeepMargin float64 // cover must survive the threat side-stepping this far
@@ -135,6 +141,12 @@ func Defaults() Tuning {
 		SeekRange:      320,
 		SeekHP:         0.7,
 		Jink:           0,
+		PatientSecs:    0,
+		PatientCubes:   10,
+		PatientRange:   70,
+		SquadKite:      false,
+		SquadKiteMin:   130,
+		SquadKiteMax:   190,
 
 		DeepMargin: 8,
 		DeepRange:  80,

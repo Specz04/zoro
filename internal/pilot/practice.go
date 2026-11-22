@@ -111,3 +111,9 @@ func (p *Pilot) jink(tn *turn) {
 	k := p.T.Jink * p.jinkDir
 	lg.dirX, lg.dirY = unit(lg.dirX-lg.dirY*k, lg.dirY+lg.dirX*k)
 }
+
+// patient reports whether we are still building up against the squad (cubes and a laser first).
+func (p *Pilot) patient(tn *turn) bool {
+	return tn.st.squad && p.T.PatientSecs > 0 && p.now < p.T.PatientSecs &&
+		(p.o.Self.Cubes < p.T.PatientCubes || p.holding("laser") < 0)
+}
