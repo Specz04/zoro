@@ -152,6 +152,10 @@ func (p *Pilot) holdSpot() int {
 				continue
 			}
 			s := float64(v)*100 + d*0.07 + float64(p.g.Gap[k])*0.8
+			if p.T.OpenPost && p.practice() {
+				// the squad knows where we are anyway: be where we see it coming, from as far as possible
+				s = -float64(v)*100 + d*0.15
+			}
 			if z.NextRadius > 60 && dn < z.NextRadius*0.35 {
 				s += 10 // everyone walks through the middle
 			}
