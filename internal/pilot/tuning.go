@@ -66,6 +66,9 @@ type Tuning struct {
 	EndgameR       float64 // ... or once the next circle is this small (0 = off)
 	FinalTight     bool    // last circle: hold tolerance scales with its radius
 	TopUp          float64 // reload below this share of a magazine whenever nobody can see us (0 = off)
+	CoverCycle     float64 // in a fight: cost of being seen while reloading, or of being hidden when ready (0 = off)
+	FinishHP       float64 // close in on a target below this share of its health (0 = off)
+	FinishRange    float64 // ... to this range
 	SquadKiteMin   float64
 	SquadKiteMax   float64
 
@@ -167,6 +170,9 @@ func Defaults() Tuning {
 		EndgameR:       80,
 		FinalTight:     true,
 		TopUp:          0.5,
+		CoverCycle:     30,
+		FinishHP:       0,
+		FinishRange:    20,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 

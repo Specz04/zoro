@@ -251,3 +251,61 @@ func (p *Pilot) topUp(cmd *wire.Command, tn *turn) {
 		cmd.Reload = true
 	}
 }
+
+// finishing reports whether the target is close enough to death to be worth closing in on.
+func (p *Pilot) finishing(tn *turn) bool {
+	t := tn.tgt
+	if p.T.FinishHP <= 0 || t == nil || t.c.MaxHP <= 0 || !t.c.Visible || tn.engaged > 2 {
+		return false
+	}
+	return t.c.HP < p.T.FinishHP*t.c.MaxHP && tn.hpFrac > 0.42
+}
+
+// armed reports whether one of our weapons could hurt the target within the next moment: a loaded
+// gun in range, a laser near full charge, or lightning in reach with the energy for a few arcs.
+func (p *Pilot) armedNow(d float64) bool {
+	if g := p.holding("gun"); g >= 0 {
+		sl := &p.slots[g]
+		if sl.ammo > 0 && sl.reload <= 0.25 && d < sl.stats.Get("range", 230)-10 {
+			return true
+		}
+	}
+	if l := p.holding("laser"); l >= 0 {
+		sl := &p.slots[l]
+		if sl.charge >= sl.stats.Get("charge", 0.75)-0.3 && d < sl.stats.Get("range", 280)-5 {
+			return true
+		}
+	}
+	if a := p.holding("lightning"); a >= 0 {
+		sl := &p.slots[a]
+		if d < sl.stats.Get("range", 45)+5 && p.energy >= 3*sl.stats.Get("energy", 3) {
+			return true
+		}
+	}
+	return false
+}
+
+// coverCycle makes the fight movement use cover in rhythm with our weapons: while nothing of ours
+// can fire, a spot the target can see costs CoverCycle; once we can fire, a spot it cannot see does.
+// We take its shots only when we are trading.
+func (p *Pilot) coverCycle(tn *turn) {
+	t := tn.tgt
+	w := p.T.CoverCycle
+	if w <= 0 || t == nil || !t.c.Visible || p.finishing(tn) {
+		return
+	}
+	ready := p.armedNow(t.d)
+	e := eye{t.c.Pos[0], t.c.Pos[1], t.c.Pos[2] + 8*p.bodyScale(t.c.Cubes)}
+	feet := p.pos[2]
+	prev := tn.lg.extra
+	tn.lg.extra = func(x, y float64) float64 {
+		cost := 0.0
+		if prev != nil {
+			cost = prev(x, y)
+		}
+		if p.seenFrom(e, x, y, feet, 0.95) != ready {
+			cost += w
+		}
+		return cost
+	}
+}

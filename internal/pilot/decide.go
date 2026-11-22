@@ -629,10 +629,16 @@ func (p *Pilot) modeFight(tn *turn) {
 		if tn.st.squad && p.T.SquadKite && p.holding("laser") >= 0 && tgt.c.Visible {
 			near, far = p.T.SquadKiteMin, p.T.SquadKiteMax // their accuracy falls off with range, a laser's does not
 		}
+		if p.finishing(tn) {
+			p.mode = "fight+finish" // nearly dead: get close enough that nothing misses
+			near, far = math.Min(8, p.T.FinishRange), p.T.FinishRange
+			tn.lg.run = tgt.d > 2*p.T.FinishRange && p.energy > 30
+		}
 		p.circle(&tn.lg, tgt.c.Pos, near, far, 1.6)
 		if p.holding("lightning") >= 0 && tgt.d > far+10 && p.energy > 55 {
 			tn.lg.run = true
 		}
+		p.coverCycle(tn)
 	}
 	tn.lg.stayOnRoof = tn.onRoof && tn.roofPlan
 }
