@@ -438,3 +438,52 @@ func (p *Pilot) choosePost(dr *wire.Drop) bool {
 	}
 	return !math.IsInf(bestScore, 1)
 }
+
+// strayRisk reports whether a shot at m could also hit a squad member that is not on us yet (a hit
+// recruits it as another hunter): line for the gun and the laser, which can miss or pass on along
+// the line of fire, arc for lightning, which jumps from the target to anyone within chain range.
+func (p *Pilot) strayRisk(m mark, arc int) (line, arcRisk bool) {
+	if !p.T.StrayGuard || !p.practice() || p.endgame() {
+		return false, false
+	}
+	ox, oy := p.pos[0], p.pos[1]
+	dx, dy := m.pos[0]-ox, m.pos[1]-oy
+	dt := math.Hypot(dx, dy)
+	if dt < 1 {
+		return false, false
+	}
+	ux, uy := dx/dt, dy/dt
+	reach := math.Max(p.T.GunMaxRange, 280)
+	chain, arcRange, cone := 14.0, 45.0, 30*math.Pi/180
+	if arc >= 0 {
+		st := p.slots[arc].stats
+		chain, arcRange, cone = st.Get("chain_range", 14), st.Get("range", 45), st.Get("cone_deg", 30)*math.Pi/180
+	}
+	for _, c := range p.contacts {
+		if c.Drone || p.now-c.SeenT > 0.6 {
+			continue
+		}
+		if math.Hypot(c.Pos[0]-m.pos[0], c.Pos[1]-m.pos[1]) < 0.5 && math.Abs(c.Pos[2]-m.pos[2]) < 0.5 {
+			continue // the target itself
+		}
+		if p.now-c.HitMeT < p.T.StrayCalm || p.now-c.IHitT < 30 || p.now-c.FacedT < 1.5 {
+			continue // already on us, or soon will be: no one left to recruit
+		}
+		vx, vy := c.Pos[0]-ox, c.Pos[1]-oy
+		t := vx*ux + vy*uy
+		side := math.Abs(vx*uy - vy*ux)
+		r := p.mechStat("radius", 2.5) * p.bodyScale(c.Cubes)
+		if t > 0 && t < reach && side < r+p.T.StrayMargin+0.02*t {
+			line = true
+		}
+		if arc >= 0 {
+			if math.Hypot(c.Pos[0]-m.pos[0], c.Pos[1]-m.pos[1]) < chain+p.T.StrayMargin {
+				arcRisk = true
+			}
+			if d := math.Hypot(vx, vy); d < dt && d < arcRange && math.Abs(math.Atan2(vx*uy-vy*ux, t)) < cone/2 {
+				arcRisk = true // nearer than the target inside the cone: the arc takes it first
+			}
+		}
+	}
+	return line, arcRisk
+}

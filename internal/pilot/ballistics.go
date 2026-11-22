@@ -149,11 +149,12 @@ func (p *Pilot) shoot(cmd *wire.Command, m mark, seen, recent bool, hpLeft float
 	if !fire && !(las >= 0 && p.slots[las].charge > 0) {
 		return
 	}
-	if gun >= 0 && fire {
+	lineRisk, arcRisk := p.strayRisk(m, arc)
+	if gun >= 0 && fire && !lineRisk {
 		p.fireGun(cmd, gun, m, gunS, trackGun, seen, pitchTol)
 	}
 	if las >= 0 {
-		p.fireLaser(cmd, las, m, beamS, seen, recent, hpLeft, pitchTol, fire)
+		p.fireLaser(cmd, las, m, beamS, seen && !lineRisk, recent, hpLeft, pitchTol, fire)
 	}
 	if lobbing {
 		if mor := p.holding("mortar"); p.slots[mor].cooldown <= 0.05 {
@@ -162,7 +163,7 @@ func (p *Pilot) shoot(cmd *wire.Command, m mark, seen, recent bool, hpLeft float
 			}
 		}
 	}
-	if arc >= 0 && fire {
+	if arc >= 0 && fire && !arcRisk {
 		sl := &p.slots[arc]
 		d := spaceDist(vec3{p.pos[0], p.pos[1], p.pos[2] + p.muzzle}, vec3{m.pos[0], m.pos[1], m.pos[2] + m.centre})
 		closing := length(m.vel[0]-p.vel[0], m.vel[1]-p.vel[1]) * 0.05

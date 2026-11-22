@@ -76,6 +76,9 @@ type Tuning struct {
 	AmbushHP       float64 // ... only above this share of our health
 	SquadKiteMin   float64
 	SquadKiteMax   float64
+	StrayGuard     bool    // against the squad, hold fire when a stray could hit a squad member not yet on us
+	StrayMargin    float64 // ... metres beside the line of fire (plus 2% of range) that count as in the way
+	StrayCalm      float64 // ... a mech that has not hurt us for this many seconds counts as passive
 
 	// cover after the first hidden spot
 	DeepMargin float64 // cover must survive the threat side-stepping this far
@@ -185,6 +188,9 @@ func Defaults() Tuning {
 		AmbushHP:       0.6,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
+		StrayGuard:     true,
+		StrayMargin:    3,
+		StrayCalm:      6,
 
 		DeepMargin: 8,
 		DeepRange:  80,
