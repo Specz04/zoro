@@ -79,7 +79,6 @@ type Tuning struct {
 	TriggerPitch   float64 // ... and this many times the usual pitch tolerance
 	TriggerBeam    float64 // let a full laser charge go within this many target radii
 	CloseDuel      bool    // against the squad, fight from 18-42 m, where every gun shot lands
-	OpenPost       bool    // against the squad, wait at the most open spot near us (see them come from afar) instead of seeking
 	SquadKiteMin   float64
 	SquadKiteMax   float64
 
@@ -194,7 +193,6 @@ func Defaults() Tuning {
 		TriggerPitch:   1,
 		TriggerBeam:    0.75,
 		CloseDuel:      false,
-		OpenPost:       true,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 

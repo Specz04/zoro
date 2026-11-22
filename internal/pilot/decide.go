@@ -697,9 +697,7 @@ func (p *Pilot) modeIdle(tn *turn) {
 		}
 		return
 	}
-	if p.T.OpenPost && tn.st.squad && p.holding("laser") >= 0 {
-		// armed: let them come to us, to where we see them first
-	} else if x, y, id, ok := p.seekTarget(tn.st, tn.hpFrac); ok {
+	if x, y, id, ok := p.seekTarget(tn.st, tn.hpFrac); ok {
 		p.mode = "seek"
 		p.walkTo(tn, x, y, 1.6, false)
 		if !tn.goalOK {
