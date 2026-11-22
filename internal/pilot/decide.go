@@ -71,6 +71,7 @@ func (p *Pilot) decide(cmd *wire.Command) {
 			tn.direct = true
 		}
 	}
+	p.jink(tn)
 	if !tn.direct {
 		p.steer(cmd, tn.lg)
 		p.unstick(cmd, tn.travelling && !tn.lg.still && !tn.lg.stayOnRoof)
@@ -80,7 +81,7 @@ func (p *Pilot) decide(cmd *wire.Command) {
 	if tn.tgt != nil {
 		td = tn.tgt.d
 	}
-	cmd.Comment = p.summary(tn.engaged, td)
+	cmd.Comment = p.summary(tn.st.tag(p.lob.ffa), tn.engaged, td)
 }
 
 // pickTarget chooses whom to shoot and totals up the pressure on us.
@@ -420,6 +421,20 @@ func (p *Pilot) chooseMode(cmd *wire.Command, tn *turn) {
 		p.climb(cmd)
 		tn.direct = true
 
+	case p.dropRun(tn.st, tn.hpFrac) != nil:
+		// the supply drop first (full repair and cubes); the torso keeps fighting
+		dr := p.dropRun(tn.st, tn.hpFrac)
+		p.mode, p.lootID = "drop-run", dr.ID
+		if d := flatDist(p.pos, dr.Pos); d > 4.5 {
+			p.walkTo(tn, dr.Pos[0], dr.Pos[1], 2.6, p.energy > 30 && d > 25 && (tn.hurting || dr.LandsIn < d/p.walk))
+			if !tn.goalOK {
+				p.bans[dr.ID] = p.now + 20
+			}
+		} else {
+			p.mode = "drop-hold"
+			tn.settle()
+		}
+
 	case duckCell >= 0:
 		p.mode = "roof-duck"
 		x, y := p.g.Pos(duckCell)
@@ -647,6 +662,18 @@ func (p *Pilot) modeIdle(tn *turn) {
 		z := &p.o.Zone
 		if p.walkTo(tn, z.NextCenter[0], z.NextCenter[1], 1.5, false) < 2 {
 			tn.settle()
+		}
+		return
+	}
+	if x, y, id, ok := p.seekTarget(tn.st, tn.hpFrac); ok {
+		p.mode = "seek"
+		p.walkTo(tn, x, y, 1.6, false)
+		if !tn.goalOK {
+			if id >= 0 {
+				p.seekBans[id] = p.now + 30
+			} else {
+				p.banExploreGoal()
+			}
 		}
 		return
 	}

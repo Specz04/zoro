@@ -43,6 +43,13 @@ type Tuning struct {
 	SquadReturnHP  float64
 	SquadSwarmTTD  float64
 	SquadDuelLeave float64
+	DropRun        float64 // break off for a supply drop within this range when hurt (0 = off)
+	DropRunHP      float64 // ... below this health share (or under 10 cubes)
+	DropRunLead    float64 // ... setting off this many seconds before we would need to
+	Seek           float64 // with nothing to do, go after a mech seen in the last this many seconds (0 = off)
+	SeekRange      float64
+	SeekHP         float64
+	Jink           float64 // sideways share of the heading when walking under fire from range (0 = off)
 
 	// cover after the first hidden spot
 	DeepMargin float64 // cover must survive the threat side-stepping this far
@@ -118,6 +125,13 @@ func Defaults() Tuning {
 		SquadReturnHP:  0.6,
 		SquadSwarmTTD:  4,
 		SquadDuelLeave: 0.35,
+		DropRun:        0,
+		DropRunHP:      0.85,
+		DropRunLead:    4,
+		Seek:           0,
+		SeekRange:      320,
+		SeekHP:         0.7,
+		Jink:           0,
 
 		DeepMargin: 8,
 		DeepRange:  80,

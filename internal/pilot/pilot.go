@@ -156,6 +156,9 @@ type Pilot struct {
 	holdClimb  bool
 	pinnedRoof bool
 	lob        lobby
+	seekBans   map[int]float64
+	jinkDir    float64
+	jinkT      float64
 }
 
 // New builds a pilot for the match announced by h.
@@ -174,6 +177,8 @@ func New(h *wire.Hello, m *arena.Map, g *grid.Grid, t Tuning) *Pilot {
 	p.cubes = map[int]*Item{}
 	p.pickups = map[int]*Item{}
 	p.bans = map[int]float64{}
+	p.seekBans = map[int]float64{}
+	p.jinkDir = 1
 	never := -100.0
 	p.hurtT, p.droneHurtT, p.soundT = never, never, never
 	p.hurtBy = -1
@@ -225,12 +230,12 @@ func (p *Pilot) damageMul(n int) float64 {
 }
 
 // summary is the short debug label sent with each command.
-func (p *Pilot) summary(engaged int, target float64) string {
+func (p *Pilot) summary(stance string, engaged int, target float64) string {
 	w := ""
 	for _, s := range p.slots {
 		if s.ok && len(s.kind) >= 2 {
 			w += s.kind[:2]
 		}
 	}
-	return fmt.Sprintf("%s hp%.0f n%d on%d k%d c%d %s r%.0f", p.mode, p.hp, p.o.Alive, engaged, p.kills, p.o.Self.Cubes, w, target)
+	return fmt.Sprintf("%s:%s u%d hp%.0f n%d on%d k%d c%d %s r%.0f", stance, p.mode, p.lob.unexplained, p.hp, p.o.Alive, engaged, p.kills, p.o.Self.Cubes, w, target)
 }
