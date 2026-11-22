@@ -74,6 +74,11 @@ type Tuning struct {
 	KillUps        bool    // upgrade order that puts our damage (laser damage, gun magazine) first
 	Ambush         float64 // against the squad, watch a landing supply drop from about this far (0 = off)
 	AmbushHP       float64 // ... only above this share of our health
+	FinishFrac     float64 // against the squad: no retreat while a target in sight is below this share of its health (0 = off)
+	FinishReach    float64 // ... and inside this range
+	FinishFloor    float64 // ... and we are above this share of ours
+	FinishPrefer   float64 // ... and such a target counts this many times as much when choosing whom to shoot
+	SquadStand     bool    // against the squad, never retreat: it follows anyway, and what we leave behind heals
 	SquadKiteMin   float64
 	SquadKiteMax   float64
 
@@ -183,6 +188,10 @@ func Defaults() Tuning {
 		KillUps:        false,
 		Ambush:         60,
 		AmbushHP:       0.6,
+		FinishFrac:     0.3,
+		FinishReach:    120,
+		FinishFloor:    0.25,
+		FinishPrefer:   3,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 
