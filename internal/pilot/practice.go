@@ -368,7 +368,7 @@ func (p *Pilot) ambushSpot(tn *turn) ([2]float64, bool) {
 		a.landedAt = map[int]float64{}
 	}
 	var best *wire.Drop
-	bd := 320.0
+	bd := p.T.AmbushReach
 	for i := range p.o.Drops {
 		dr := &p.o.Drops[i]
 		if dr.Holder != nil && *dr.Holder == p.o.Self.ID {
