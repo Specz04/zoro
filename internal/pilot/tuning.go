@@ -69,6 +69,9 @@ type Tuning struct {
 	CoverCycle     float64 // in a fight: cost of being seen while reloading, or of being hidden when ready (0 = off)
 	FinishHP       float64 // close in on a target below this share of its health (0 = off)
 	FinishRange    float64 // ... to this range
+	HouseAcc       bool    // against the squad, use the house bots' measured hit rates by range
+	IsoW           float64 // in a fight: cost per other recently seen mech that could see a position (0 = off)
+	KillUps        bool    // upgrade order that puts our damage (laser damage, gun magazine) first
 	SquadKiteMin   float64
 	SquadKiteMax   float64
 
@@ -173,6 +176,9 @@ func Defaults() Tuning {
 		CoverCycle:     30,
 		FinishHP:       0,
 		FinishRange:    20,
+		HouseAcc:       true,
+		IsoW:           0,
+		KillUps:        false,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 

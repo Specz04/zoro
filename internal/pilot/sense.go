@@ -72,6 +72,11 @@ func (p *Pilot) readSelf(s *wire.Me) {
 	p.turn = s.Stats.Get("turn_rate", p.mechStat("turn_rate", 4))
 	p.pitchRate = s.Stats.Get("pitch_rate", p.mechStat("pitch_rate", 3))
 	p.armor = s.Stats.Get("armor", 0)
+	if l := p.holding("laser"); l >= 0 {
+		p.prevCharge = p.slots[l].charge
+	} else {
+		p.prevCharge = 0
+	}
 	for i := range p.slots {
 		p.slots[i] = slot{}
 		if i >= len(s.Weapons) || s.Weapons[i] == nil {

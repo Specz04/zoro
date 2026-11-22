@@ -204,7 +204,10 @@ func (p *Pilot) fireLaser(cmd *wire.Command, i int, m mark, s solution, seen, re
 	sl := &p.slots[i]
 	inRange := s.dist < sl.stats.Get("range", 280)-4
 	if sl.charge > 0 {
-		full := sl.charge >= sl.stats.Get("charge", 0.75)-1e-3
+		// (the charge we are shown is rounded to two decimals, so a full charge of 0.5625 s reads 0.56:
+		// treat it as full within that rounding, or once it has stopped growing near the top)
+		top := sl.stats.Get("charge", 0.75)
+		full := sl.charge >= top-0.006 || (sl.charge >= top-0.06 && sl.charge <= p.prevCharge+1e-6)
 		lethal := sl.charge >= sl.stats.Get("min_charge", 0.15) && p.laserHit(sl.stats, sl.charge) >= hpLeft
 		hold := true
 		if (full || lethal) && seen && s.clear && inRange {

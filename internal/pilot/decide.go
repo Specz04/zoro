@@ -639,6 +639,7 @@ func (p *Pilot) modeFight(tn *turn) {
 			tn.lg.run = true
 		}
 		p.coverCycle(tn)
+		p.isolate(tn)
 	}
 	tn.lg.stayOnRoof = tn.onRoof && tn.roofPlan
 }

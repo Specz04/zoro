@@ -309,3 +309,39 @@ func (p *Pilot) coverCycle(tn *turn) {
 		return cost
 	}
 }
+
+// isolate makes a fight one at a time: a position that another mech seen in the last 8 s within
+// 170 m could see costs IsoW per such mech, so we fight from where only the target has a line on us.
+func (p *Pilot) isolate(tn *turn) {
+	t := tn.tgt
+	if p.T.IsoW <= 0 || t == nil {
+		return
+	}
+	var eyes []eye
+	for _, c := range p.contacts {
+		if c.Drone || c.ID == t.c.ID || p.now-c.SeenT > 8 || flatDist(c.Pos, p.pos) > 170 {
+			continue
+		}
+		eyes = append(eyes, eye{c.Pos[0], c.Pos[1], c.Pos[2] + 8*p.bodyScale(c.Cubes)})
+		if len(eyes) >= 5 {
+			break
+		}
+	}
+	if len(eyes) == 0 {
+		return
+	}
+	w, feet := p.T.IsoW, p.pos[2]
+	prev := tn.lg.extra
+	tn.lg.extra = func(x, y float64) float64 {
+		cost := 0.0
+		if prev != nil {
+			cost = prev(x, y)
+		}
+		for _, e := range eyes {
+			if p.seenFrom(e, x, y, feet, 0.95) {
+				cost += w
+			}
+		}
+		return cost
+	}
+}

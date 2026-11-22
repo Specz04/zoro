@@ -24,7 +24,16 @@ func (p *Pilot) laserRate() float64 {
 	return 0.75
 }
 
+// House-bot hit rates against us by range, as measured on the public match feed.
+var (
+	houseGun   = curve{{40, 1.0}, {60, 0.57}, {100, 0.23}, {140, 0.18}, {180, 0.09}, {200, 0.02}}
+	houseLaser = curve{{60, 0.61}, {100, 0.39}, {125, 0.05}, {160, 0.03}}
+)
+
 func (p *Pilot) gunCurves() (ours, theirs curve) {
+	if p.practice() && p.T.HouseAcc {
+		return squadOurGunHits, houseGun
+	}
 	if p.practice() {
 		return squadOurGunHits, squadTheirGunHits
 	}
@@ -39,7 +48,7 @@ type loadout struct {
 }
 
 // dps estimates the sustained damage per second of a loadout at range d.
-func (p *Pilot) dps(l loadout, d float64, gunHits curve) float64 {
+func (p *Pilot) dps(l loadout, d float64, gunHits curve, beamHit float64) float64 {
 	total := 0.0
 	if l.gun {
 		g := p.cfg.Weapon("gun")
@@ -51,7 +60,7 @@ func (p *Pilot) dps(l loadout, d float64, gunHits curve) float64 {
 	if l.laser {
 		w := p.cfg.Weapon("laser")
 		if d < w.Get("range", 280) {
-			total += w.Get("damage", 315) / (w.Get("charge", 0.75) + w.Get("cooldown", 1.65)) * p.laserRate()
+			total += w.Get("damage", 315) / (w.Get("charge", 0.75) + w.Get("cooldown", 1.65)) * beamHit
 		}
 	}
 	if l.arc && l.arcPower {
@@ -78,7 +87,7 @@ func (p *Pilot) ourDPS(d float64) float64 {
 		arcPower: p.energy > 15,
 	}
 	ours, _ := p.gunCurves()
-	return p.dps(l, d, ours)
+	return p.dps(l, d, ours, p.laserRate())
 }
 
 // theirDPS is a contact's damage rate on us at range d (before our armour).
@@ -98,7 +107,11 @@ func (p *Pilot) theirDPS(c *Contact, d float64) float64 {
 		l.laser = false
 	}
 	_, theirs := p.gunCurves()
-	return p.dps(l, d, theirs)
+	beam := p.laserRate()
+	if p.practice() && p.T.HouseAcc {
+		beam = houseLaser.at(d)
+	}
+	return p.dps(l, d, theirs, beam)
 }
 
 // odds evaluates a fight with c at several ranges, paying for the trip to each, and returns the

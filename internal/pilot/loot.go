@@ -187,6 +187,15 @@ var upgradeOrder = map[string]float64{
 	"gyros": 0.30, "jets": 0.30, "laser_pierce": 0.20,
 }
 
+// killFirstOrder ranks what adds most to the damage we land before going down: the laser's damage,
+// then a bigger gun magazine (a third more sustained gun fire), then health and repair.
+var killFirstOrder = map[string]float64{
+	"laser_damage": 1.10, "gun_mag": 1.05, "plating": 1.00, "nanites": 0.98, "armor": 0.94, "gun_damage": 0.92,
+	"laser_charge": 0.90, "lightning_efficiency": 0.88, "gun_velocity": 0.84, "gun_rate": 0.82, "servos": 0.70,
+	"lightning_range": 0.66, "reactor": 0.50, "capacitor": 0.48, "gyros": 0.35, "jets": 0.32, "sensors": 0.30,
+	"lightning_chain": 0.30, "mortar_reload": 0.25, "mortar_splash": 0.25, "mortar_velocity": 0.22, "laser_pierce": 0.20,
+}
+
 func (p *Pilot) chooseUpgrade(cmd *wire.Command) {
 	of := p.o.Offer
 	if of == nil || len(of.Choices) == 0 {
@@ -194,7 +203,11 @@ func (p *Pilot) chooseUpgrade(cmd *wire.Command) {
 	}
 	best, bv := 0, -1.0
 	for i, c := range of.Choices {
-		v, ok := upgradeOrder[c.ID]
+		table := upgradeOrder
+		if p.T.KillUps {
+			table = killFirstOrder
+		}
+		v, ok := table[c.ID]
 		if !ok {
 			v = 0.25
 		}
