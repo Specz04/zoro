@@ -56,6 +56,7 @@ type Tuning struct {
 	PatientRange   float64 // ... a hunter closer than this is fought anyway
 	SquadKite      bool    // against the squad, with a laser, fight from SquadKiteMin..SquadKiteMax
 	UpOffense      float64 // added to the rank of damage upgrades (0 = defence first)
+	LaserRespect   float64 // against the squad, without a laser, take cover from a laser hitting us from beyond this (0 = off)
 	SquadKiteMin   float64
 	SquadKiteMax   float64
 
@@ -147,6 +148,7 @@ func Defaults() Tuning {
 		PatientRange:   70,
 		SquadKite:      false,
 		UpOffense:      0,
+		LaserRespect:   0,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 

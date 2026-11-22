@@ -201,6 +201,10 @@ func (p *Pilot) chooseIntent(tn *turn) {
 		return
 	}
 	switch {
+	case tgt.engaged && tn.st.squad && p.T.LaserRespect > 0 && tgt.c.Laser && p.holding("laser") < 0 &&
+		tgt.d > p.T.LaserRespect && p.now-tgt.c.HitMeT < 4 && p.slipAway(tgt, tn.ths, true):
+		// a laser out-damages our gun three to one at range: break its line and let it come to us
+		tn.slip = true
 	case tgt.engaged && tn.st.careful:
 		p.carefulResponse(tn)
 	case tgt.engaged:
