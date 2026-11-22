@@ -181,7 +181,7 @@ func Defaults() Tuning {
 		HouseAcc:       true,
 		IsoW:           0,
 		KillUps:        false,
-		Ambush:         100,
+		Ambush:         60,
 		AmbushHP:       0.6,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
