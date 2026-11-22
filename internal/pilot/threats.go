@@ -18,6 +18,10 @@ func (p *Pilot) stance() stance {
 		// second place is banked: nothing to lose by fighting for first
 		return stance{duel: true, engage: 0, disengage: 0.45, lootRadius: 150, wantCubes: 40}
 	}
+	if p.practice() && p.endgame() {
+		// late on the whole squad hunts us at once: the careful stance outlasts it longer
+		return stance{engage: p.T.Engage, disengage: p.T.Disengage, careful: true, lootRadius: p.T.LootRadius, wantCubes: p.T.WantCubes}
+	}
 	if p.practice() {
 		return stance{squad: true, engage: p.T.SquadEngage, disengage: p.T.Disengage, lootRadius: p.T.LootRadius, wantCubes: p.T.SquadCubes}
 	}

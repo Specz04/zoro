@@ -103,11 +103,12 @@ func (p *Pilot) pickTarget(tn *turn) {
 		if t.engaged {
 			s *= 1.6
 		}
-		if t.c.MaxHP > 0 {
-			s *= 2 - t.c.HP/t.c.MaxHP
-		}
+		s *= p.killValue(t)
 		if t.c.ID == p.targetID {
 			s *= 1.2
+			if p.now-t.c.IHitT < 4 {
+				s *= 1.25 // keep at it: damage that does not kill heals back
+			}
 		}
 		if s > bestScore {
 			bestScore, tn.tgt = s, t
@@ -342,7 +343,7 @@ func (p *Pilot) setupLegs(tn *turn) {
 		}
 		tn.lg.look, tn.lg.mayRun = 12, true
 	}
-	p.rearGuard(tn)
+	p.threatField(tn)
 	// jetting up a wall in someone's sights is how mechs die
 	p.holdClimb = len(tn.watched) > 0 || tn.hurting
 	for i := range tn.ths {
@@ -672,7 +673,12 @@ func (p *Pilot) modeIdle(tn *turn) {
 	p.mode = "hold"
 	if tn.zi.final {
 		z := &p.o.Zone
-		if p.walkTo(tn, z.NextCenter[0], z.NextCenter[1], 1.5, false) < 2 {
+		tol, run := 2.0, false
+		if p.T.FinalTight {
+			tol = clamp(z.Radius*0.05, 0.5, 2) // the circle shrinks to a point: stand ever closer to it
+			run = z.Radius < 20 && p.energy > 20
+		}
+		if p.walkTo(tn, z.NextCenter[0], z.NextCenter[1], 1.5, run) < tol {
 			tn.settle()
 		}
 		return
@@ -817,7 +823,7 @@ func (p *Pilot) aimAndFire(cmd *wire.Command, tn *turn) {
 		p.shoot(cmd, p.markOf(tgt.c), tgt.c.Visible, false, tgt.c.HP, false) // watch it, do not provoke
 	default:
 		p.lookAround(cmd, tn.heading, tn.hasHeading)
-		p.coverReload(cmd)
+		p.topUp(cmd, tn)
 		if g := p.holding("gun"); g >= 0 {
 			if sl := &p.slots[g]; sl.reload <= 0 && sl.ammo < sl.stats.Get("mag", 12)*0.67 {
 				cmd.Reload = true // top up while nothing is happening

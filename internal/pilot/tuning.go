@@ -57,10 +57,15 @@ type Tuning struct {
 	SquadKite      bool    // against the squad, with a laser, fight from SquadKiteMin..SquadKiteMax
 	UpOffense      float64 // added to the rank of damage upgrades (0 = defence first)
 	LaserRespect   float64 // against the squad, without a laser, take cover from a laser hitting us from beyond this (0 = off)
-	LaserCooldown  bool    // against the squad, count an enemy laser as offline while it recharges after a shot
-	RearAvoidW     float64 // with 2+ attackers, cost of a position that puts an extra one behind us (0 = off)
-	CoverReload    bool    // top the gun up behind cover (below 60% of a magazine, 25% in a free-for-all)
-	PracticeRim    float64 // against the squad, wait near 88% of the next circle's radius while it is big (0 = off)
+	FieldWeight    float64 // threat field: seconds of extra incoming damage a position is charged for (0 = off)
+	ArcMargin      float64 // ... metres beyond the lightning range still treated as its reach
+	KillTime       float64 // target choice: seconds scale of the time-to-kill preference (0 = off)
+	Backstab       float64 // target choice: bonus for a mech turned away from us (our hits do 1.5x) (0 = off)
+	LaserReady     bool    // against the squad, a laser recovering from a shot it fired is harmless until ready
+	EndgameT       float64 // against the squad, careful stance from this match time (0 = off)
+	EndgameR       float64 // ... or once the next circle is this small (0 = off)
+	FinalTight     bool    // last circle: hold tolerance scales with its radius
+	TopUp          float64 // reload below this share of a magazine whenever nobody can see us (0 = off)
 	SquadKiteMin   float64
 	SquadKiteMax   float64
 
@@ -153,10 +158,15 @@ func Defaults() Tuning {
 		SquadKite:      false,
 		UpOffense:      0,
 		LaserRespect:   0,
-		LaserCooldown:  true,
-		RearAvoidW:     35,
-		CoverReload:    true,
-		PracticeRim:    0,
+		FieldWeight:    0.5,
+		ArcMargin:      9,
+		KillTime:       6,
+		Backstab:       1.3,
+		LaserReady:     true,
+		EndgameT:       250,
+		EndgameR:       80,
+		FinalTight:     true,
+		TopUp:          0.5,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 

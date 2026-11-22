@@ -118,64 +118,136 @@ func (p *Pilot) patient(tn *turn) bool {
 		(p.o.Self.Cubes < p.T.PatientCubes || p.holding("laser") < 0)
 }
 
-// rearGuard: with two or more attackers, shots from outside our front arc do half as much again, so
-// value positions that keep the extra attackers in front of us while we face the target.
-func (p *Pilot) rearGuard(tn *turn) {
-	t := tn.tgt
-	if p.T.RearAvoidW <= 0 || t == nil || !t.c.Visible || tn.engaged < 2 {
+// threatField charges each candidate position for the extra damage we would take there over the
+// next FieldWeight seconds, from the two sources that movement can actually avoid:
+//   - a lightning carrier's reach (it does several times a gun's damage, but only up close), unless
+//     we can answer it with lightning of our own;
+//   - with two or more on us, an attacker left outside our front arc while we face the target, whose
+//     hits then do rear damage (half as much again).
+func (p *Pilot) threatField(tn *turn) {
+	w := p.T.FieldWeight
+	if w <= 0 {
 		return
 	}
-	var extras [][2]float64
+	type arc struct{ x, y, reach, dps float64 }
+	type flank struct{ x, y, extra float64 }
+	var arcs []arc
+	var flanks []flank
+	lw := p.cfg.Weapon("lightning")
+	canAnswer := p.holding("lightning") >= 0 && p.energy > 20
 	for i := range tn.ths {
-		o := &tn.ths[i]
-		if o.engaged && o.c.ID != t.c.ID && o.c.Visible && o.d < 210 {
-			extras = append(extras, [2]float64{o.c.Pos[0], o.c.Pos[1]})
+		t := &tn.ths[i]
+		c := t.c
+		if !c.Listed && p.now-c.SeenT > 2 {
+			continue
+		}
+		if c.Arc && !canAnswer && t.d < 140 {
+			reach := lw.Get("range", 45) + p.T.ArcMargin
+			if c.Cubes >= 6 {
+				reach += 5 // it may have bought the range upgrade
+			}
+			dps := lw.Get("damage", 60) / math.Max(lw.Get("cooldown", 0.25), 0.05) * p.damageMul(c.Cubes)
+			arcs = append(arcs, arc{c.Pos[0], c.Pos[1], reach, dps})
+			if t.d < reach+6 && c.Visible {
+				tn.lg.mayRun = true
+				tn.lg.look = max(tn.lg.look, 10)
+			}
+		}
+		if tn.tgt != nil && tn.engaged >= 2 && t.engaged && c.ID != tn.tgt.c.ID && c.Visible && t.d < 220 {
+			flanks = append(flanks, flank{c.Pos[0], c.Pos[1], 0.5 * p.theirDPS(c, t.d)})
 		}
 	}
-	if len(extras) == 0 {
+	if len(arcs) == 0 && len(flanks) == 0 {
 		return
 	}
 	half := p.mechStat("front_arc_deg", 180) * math.Pi / 360
-	w, tx, ty := p.T.RearAvoidW, t.c.Pos[0], t.c.Pos[1]
+	var tx, ty float64
+	if tn.tgt != nil {
+		tx, ty = tn.tgt.c.Pos[0], tn.tgt.c.Pos[1]
+	}
 	prev := tn.lg.extra
 	tn.lg.extra = func(x, y float64) float64 {
 		cost := 0.0
 		if prev != nil {
 			cost = prev(x, y)
 		}
-		face := math.Atan2(ty-y, tx-x)
-		for _, e := range extras {
-			if math.Abs(wrap(math.Atan2(e[1]-y, e[0]-x), face)) > half {
-				cost += w
+		for _, a := range arcs {
+			// full price inside the reach, fading out over ten metres beyond it
+			if f := clamp((a.reach+10-length(x-a.x, y-a.y))/10, 0, 1); f > 0 {
+				cost += a.dps * w * f
+			}
+		}
+		if len(flanks) > 0 {
+			face := math.Atan2(ty-y, tx-x)
+			for _, f := range flanks {
+				if math.Abs(wrap(math.Atan2(f.y-y, f.x-x), face)) > half {
+					cost += f.extra * w
+				}
 			}
 		}
 		return cost
 	}
 }
 
-// coverReload tops up the gun while nobody can see us.
-func (p *Pilot) coverReload(cmd *wire.Command) {
+// killValue weights a target by how soon we could finish it (damage that does not kill within the
+// regeneration window heals back) and by whether it has its back to us.
+func (p *Pilot) killValue(t *threat) float64 {
+	c := t.c
+	rate := p.ourDPS(t.d)
+	turned := p.T.Backstab > 0 && !c.Drone && math.Abs(wrap(c.Aim[0], bearing(c.Pos, p.pos))) > p.mechStat("front_arc_deg", 180)*math.Pi/360
+	if turned {
+		rate *= 1.5
+	}
+	v := 1.0
+	switch {
+	case p.T.KillTime > 0:
+		hp := c.HP
+		if hp <= 0 {
+			hp = math.Max(c.MaxHP, 1)
+		}
+		v = 1 + p.T.KillTime/(hp/math.Max(rate, 1)+1)
+	case c.MaxHP > 0:
+		v = 2 - c.HP/c.MaxHP
+	}
+	if turned {
+		v *= p.T.Backstab
+	}
+	return v
+}
+
+// laserLive reports whether c's laser could hurt us now. A laser announces its charge, so one that is
+// not charging and fired less than a cooldown plus a charge ago cannot fire yet.
+func (p *Pilot) laserLive(c *Contact) bool {
+	if c.Charging {
+		return true
+	}
+	w := p.cfg.Weapon("laser")
+	return p.now-c.LaserT >= w.Get("cooldown", 1.65)+w.Get("charge", 0.75)
+}
+
+// endgame reports whether the late phase has come, when the whole squad hunts us at once.
+func (p *Pilot) endgame() bool {
+	z := &p.o.Zone
+	return (p.T.EndgameT > 0 && p.now >= p.T.EndgameT) ||
+		(p.T.EndgameR > 0 && z.NextRadius > 0 && z.NextRadius <= p.T.EndgameR && p.now >= 150)
+}
+
+// topUp reloads the gun below TopUp of a magazine whenever no recent threat can see us.
+func (p *Pilot) topUp(cmd *wire.Command, tn *turn) {
 	g := p.holding("gun")
-	if !p.T.CoverReload || cmd.Reload || g < 0 || cmd.Fire[g] || p.now-p.sightedT < 1.1 {
+	if p.T.TopUp <= 0 || g < 0 || cmd.Reload || cmd.Fire[g] {
 		return
 	}
 	sl := &p.slots[g]
-	mag := sl.stats.Get("mag", 12)
-	frac := 0.25
-	if p.practice() {
-		frac = 0.6
+	if sl.reload > 0 || sl.ammo >= sl.stats.Get("mag", 12)*p.T.TopUp {
+		return
 	}
-	if sl.reload <= 0 && sl.ammo < mag && sl.ammo <= mag*frac {
+	for i := range tn.ths {
+		if tn.ths[i].c.Visible && tn.ths[i].c.Listed {
+			return
+		}
+	}
+	if p.hiddenNow(tn.ths) {
 		cmd.Reload = true
 	}
-}
-
-// rimCost is the hold-spot penalty for standing away from 88% of a big next circle (the squad roams
-// the middle).
-func (p *Pilot) rimCost(fromCentre float64) float64 {
-	z := &p.o.Zone
-	if p.T.PracticeRim <= 0 || !p.practice() || z.NextRadius < 180 {
-		return 0
-	}
-	return math.Abs(fromCentre-z.NextRadius*0.88) * p.T.PracticeRim
 }
