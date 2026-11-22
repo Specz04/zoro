@@ -201,6 +201,10 @@ func (p *Pilot) chooseUpgrade(cmd *wire.Command) {
 		if p.holding("lightning") >= 0 && (c.ID == "reactor" || c.ID == "capacitor") {
 			v += 0.3
 		}
+		switch c.ID {
+		case "gun_rate", "gun_damage", "laser_damage", "laser_charge":
+			v += p.T.UpOffense
+		}
 		if v > bv {
 			best, bv = i, v
 		}
