@@ -42,6 +42,7 @@ type Contact struct {
 	FacedT    float64 // last time its torso pointed at us
 	GhostT    float64 // last time it hit us unseen (Pos is then a guess)
 	EngagedT  float64 // last time it counted as engaged with us
+	LaserT    float64 // last time we saw it fire a laser
 
 	motion motionLog // for the gun lead (aimlead.go)
 }
@@ -49,7 +50,7 @@ type Contact struct {
 func newContact(id int, now float64) *Contact {
 	never := -100.0
 	return &Contact{ID: id, HitMeT: never, IHitT: never, FacedT: never, SightT: never, GhostT: never,
-		ViewT: never, EngagedT: never, FirstT: now, SeenT: never}
+		ViewT: never, EngagedT: never, FirstT: now, SeenT: never, LaserT: never}
 }
 
 // Item is a remembered crate, cube or weapon pickup.
@@ -113,6 +114,7 @@ type Pilot struct {
 	soundT      float64
 	soundBear   float64
 	kills       int
+	sightedT    float64 // last time an enemy mech had a line to us (or we to it)
 
 	// legs
 	route     routeState
@@ -180,7 +182,7 @@ func New(h *wire.Hello, m *arena.Map, g *grid.Grid, t Tuning) *Pilot {
 	p.seekBans = map[int]float64{}
 	p.jinkDir = 1
 	never := -100.0
-	p.hurtT, p.droneHurtT, p.soundT = never, never, never
+	p.hurtT, p.droneHurtT, p.soundT, p.sightedT = never, never, never, never
 	p.hurtBy = -1
 	p.strafeDir = 1
 	p.targetID, p.lootID = -1, -1

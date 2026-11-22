@@ -342,6 +342,7 @@ func (p *Pilot) setupLegs(tn *turn) {
 		}
 		tn.lg.look, tn.lg.mayRun = 12, true
 	}
+	p.rearGuard(tn)
 	// jetting up a wall in someone's sights is how mechs die
 	p.holdClimb = len(tn.watched) > 0 || tn.hurting
 	for i := range tn.ths {
@@ -816,6 +817,7 @@ func (p *Pilot) aimAndFire(cmd *wire.Command, tn *turn) {
 		p.shoot(cmd, p.markOf(tgt.c), tgt.c.Visible, false, tgt.c.HP, false) // watch it, do not provoke
 	default:
 		p.lookAround(cmd, tn.heading, tn.hasHeading)
+		p.coverReload(cmd)
 		if g := p.holding("gun"); g >= 0 {
 			if sl := &p.slots[g]; sl.reload <= 0 && sl.ammo < sl.stats.Get("mag", 12)*0.67 {
 				cmd.Reload = true // top up while nothing is happening

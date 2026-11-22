@@ -117,3 +117,65 @@ func (p *Pilot) patient(tn *turn) bool {
 	return tn.st.squad && p.T.PatientSecs > 0 && p.now < p.T.PatientSecs &&
 		(p.o.Self.Cubes < p.T.PatientCubes || p.holding("laser") < 0)
 }
+
+// rearGuard: with two or more attackers, shots from outside our front arc do half as much again, so
+// value positions that keep the extra attackers in front of us while we face the target.
+func (p *Pilot) rearGuard(tn *turn) {
+	t := tn.tgt
+	if p.T.RearAvoidW <= 0 || t == nil || !t.c.Visible || tn.engaged < 2 {
+		return
+	}
+	var extras [][2]float64
+	for i := range tn.ths {
+		o := &tn.ths[i]
+		if o.engaged && o.c.ID != t.c.ID && o.c.Visible && o.d < 210 {
+			extras = append(extras, [2]float64{o.c.Pos[0], o.c.Pos[1]})
+		}
+	}
+	if len(extras) == 0 {
+		return
+	}
+	half := p.mechStat("front_arc_deg", 180) * math.Pi / 360
+	w, tx, ty := p.T.RearAvoidW, t.c.Pos[0], t.c.Pos[1]
+	prev := tn.lg.extra
+	tn.lg.extra = func(x, y float64) float64 {
+		cost := 0.0
+		if prev != nil {
+			cost = prev(x, y)
+		}
+		face := math.Atan2(ty-y, tx-x)
+		for _, e := range extras {
+			if math.Abs(wrap(math.Atan2(e[1]-y, e[0]-x), face)) > half {
+				cost += w
+			}
+		}
+		return cost
+	}
+}
+
+// coverReload tops up the gun while nobody can see us.
+func (p *Pilot) coverReload(cmd *wire.Command) {
+	g := p.holding("gun")
+	if !p.T.CoverReload || cmd.Reload || g < 0 || cmd.Fire[g] || p.now-p.sightedT < 1.1 {
+		return
+	}
+	sl := &p.slots[g]
+	mag := sl.stats.Get("mag", 12)
+	frac := 0.25
+	if p.practice() {
+		frac = 0.6
+	}
+	if sl.reload <= 0 && sl.ammo < mag && sl.ammo <= mag*frac {
+		cmd.Reload = true
+	}
+}
+
+// rimCost is the hold-spot penalty for standing away from 88% of a big next circle (the squad roams
+// the middle).
+func (p *Pilot) rimCost(fromCentre float64) float64 {
+	z := &p.o.Zone
+	if p.T.PracticeRim <= 0 || !p.practice() || z.NextRadius < 180 {
+		return 0
+	}
+	return math.Abs(fromCentre-z.NextRadius*0.88) * p.T.PracticeRim
+}

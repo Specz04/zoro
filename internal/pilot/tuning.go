@@ -57,6 +57,10 @@ type Tuning struct {
 	SquadKite      bool    // against the squad, with a laser, fight from SquadKiteMin..SquadKiteMax
 	UpOffense      float64 // added to the rank of damage upgrades (0 = defence first)
 	LaserRespect   float64 // against the squad, without a laser, take cover from a laser hitting us from beyond this (0 = off)
+	LaserCooldown  bool    // against the squad, count an enemy laser as offline while it recharges after a shot
+	RearAvoidW     float64 // with 2+ attackers, cost of a position that puts an extra one behind us (0 = off)
+	CoverReload    bool    // top the gun up behind cover (below 60% of a magazine, 25% in a free-for-all)
+	PracticeRim    float64 // against the squad, wait near 88% of the next circle's radius while it is big (0 = off)
 	SquadKiteMin   float64
 	SquadKiteMax   float64
 
@@ -149,6 +153,10 @@ func Defaults() Tuning {
 		SquadKite:      false,
 		UpOffense:      0,
 		LaserRespect:   0,
+		LaserCooldown:  false,
+		RearAvoidW:     0,
+		CoverReload:    false,
+		PracticeRim:    0,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 

@@ -94,6 +94,13 @@ func (p *Pilot) theirDPS(c *Contact, d float64) float64 {
 	if a := p.holding("lightning"); a >= 0 && p.energy > 20 && d < p.slots[a].stats.Get("range", 45)-3 {
 		l.laser = false
 	}
+	// a laser that has just fired needs its cooldown and a new charge before it can hurt us again
+	if l.laser && p.T.LaserCooldown && p.practice() && !c.Charging {
+		w := p.cfg.Weapon("laser")
+		if p.now-c.LaserT < w.Get("cooldown", 1.65)+w.Get("charge", 0.75)-0.4 {
+			l.laser = false
+		}
+	}
 	_, theirs := p.gunCurves()
 	return p.dps(l, d, theirs)
 }

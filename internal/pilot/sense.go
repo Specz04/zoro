@@ -41,6 +41,13 @@ func (p *Pilot) sense(o *wire.Obs) {
 			}
 		}
 	}
+	for _, b := range o.Beams {
+		if b.Kind == "laser" && b.By != o.Self.ID {
+			if c := p.contacts[b.By]; c != nil {
+				c.LaserT = p.now - b.Age
+			}
+		}
+	}
 	if o.Tick%6 == 0 {
 		p.markExplored()
 	}
@@ -124,6 +131,9 @@ func (p *Pilot) see(a *wire.Actor) {
 		return
 	}
 	c.SightT = p.now
+	if !c.Drone {
+		p.sightedT = p.now
+	}
 	half := p.cfg.Vision.FovDeg * math.Pi / 360
 	if half <= 0 {
 		half = math.Pi / 3

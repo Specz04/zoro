@@ -178,6 +178,14 @@ func (f *FlexID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Beam is a laser or lightning discharge seen this observation.
+type Beam struct {
+	By   int          `json:"by"`
+	Kind string       `json:"kind"`
+	Path [][3]float64 `json:"path"`
+	Age  float64      `json:"age"`
+}
+
 // Drop is a supply drop.
 type Drop struct {
 	ID      int        `json:"id"`
@@ -219,6 +227,7 @@ type Obs struct {
 	Cubes       []Thing      `json:"cubes"`
 	Pickups     []Pickup     `json:"pickups"`
 	Sounds      []Sound      `json:"sounds"`
+	Beams       []Beam       `json:"beams"`
 	Events      []Event      `json:"events"`
 	Drops       []Drop       `json:"drops"`
 	Zone        Zone         `json:"zone"`

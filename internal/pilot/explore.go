@@ -97,7 +97,8 @@ func (p *Pilot) exploreGoal() (float64, float64, bool) {
 			e.lastT[k] = float32(p.now) // cut off from us
 			continue
 		}
-		if s := length(x-p.pos[0], y-p.pos[1]) - math.Min(age, 300)*0.15; s < bs {
+		s := length(x-p.pos[0], y-p.pos[1]) - math.Min(age, 300)*0.15 + p.rimCost(length(x-z.NextCenter[0], y-z.NextCenter[1]))
+		if s < bs {
 			best, bs = k, s
 		}
 	}
@@ -150,7 +151,7 @@ func (p *Pilot) holdSpot() int {
 			if d > 320 {
 				continue
 			}
-			s := float64(v)*100 + d*0.07 + float64(p.g.Gap[k])*0.8
+			s := float64(v)*100 + d*0.07 + float64(p.g.Gap[k])*0.8 + p.rimCost(dn)
 			if z.NextRadius > 60 && dn < z.NextRadius*0.35 {
 				s += 10 // everyone walks through the middle
 			}
