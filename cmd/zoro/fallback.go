@@ -10,7 +10,7 @@ import (
 // nearest mech in view.
 type fallback struct{}
 
-func (fallback) Name() string { return "zoro" }
+func (fallback) Name() string { return "anc" }
 
 func (fallback) Act(o *wire.Obs) wire.Command {
 	c := wire.NewCommand(o.Tick)
