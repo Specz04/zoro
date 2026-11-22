@@ -128,7 +128,7 @@ func Defaults() Tuning {
 		SquadReturnHP:  0.6,
 		SquadSwarmTTD:  4,
 		SquadDuelLeave: 0.35,
-		DropRun:        0,
+		DropRun:        420,
 		DropRunHP:      0.85,
 		DropRunLead:    4,
 		Seek:           30,
