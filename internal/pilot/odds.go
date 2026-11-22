@@ -80,7 +80,7 @@ func (p *Pilot) dps(l loadout, d float64, gunHits curve, beamHit float64) float6
 func (p *Pilot) ourDPS(d float64) float64 {
 	l := loadout{
 		gun:      p.holding("gun") >= 0 && d < p.T.GunMaxRange,
-		laser:    p.holding("laser") >= 0 && p.now >= p.shortedUntil,
+		laser:    p.holding("laser") >= 0,
 		arc:      p.holding("lightning") >= 0,
 		mortar:   p.holding("mortar") >= 0,
 		cubes:    p.o.Self.Cubes,
@@ -159,11 +159,7 @@ func (p *Pilot) odds(c *Contact, d float64) (adv, near, far float64) {
 		}
 	}
 	try(d, true)
-	bands := []float64{22, 45, 75, 115, 160, 200}
-	if p.T.CloseDuel && p.practice() && !c.Drone {
-		bands = []float64{24, 38}
-	}
-	for _, r := range bands {
+	for _, r := range [...]float64{22, 45, 75, 115, 160, 200} {
 		try(r, false)
 	}
 	if best < 0 {

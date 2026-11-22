@@ -153,7 +153,6 @@ type Event struct {
 	Target  int      `json:"target"`
 	ID      FlexID   `json:"id"`
 	Reason  string   `json:"reason"`
-	Effect  string   `json:"effect"`
 }
 
 // FlexID is an id that is a number for most events and a string for upgrades.

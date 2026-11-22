@@ -193,7 +193,7 @@ func (p *Pilot) fireGun(cmd *wire.Command, i int, m mark, s solution, tracked, s
 		ey, ep = math.Abs(wrap(s.yaw, p.aim[0])), math.Abs(s.pitch-p.aim[1])
 	}
 	r := math.Max(s.dist, 1)
-	if ey < math.Atan2(m.radius*p.T.TriggerGun, r) && ep < math.Atan2(pitchTol*p.T.TriggerPitch, r) {
+	if ey < math.Atan2(m.radius*0.8, r) && ep < math.Atan2(pitchTol, r) {
 		cmd.Fire[i] = true
 	}
 }
@@ -213,14 +213,14 @@ func (p *Pilot) fireLaser(cmd *wire.Command, i int, m mark, s solution, seen, re
 		if (full || lethal) && seen && s.clear && inRange {
 			ey, ep := p.slewErr(s)
 			r := math.Max(s.dist, 1)
-			if ey < math.Atan2(m.radius*p.T.TriggerBeam, r) && ep < math.Atan2(pitchTol*0.9*p.T.TriggerPitch, r) {
+			if ey < math.Atan2(m.radius*0.75, r) && ep < math.Atan2(pitchTol*0.9, r) {
 				hold = false
 			}
 		}
 		cmd.Fire[i] = hold
 		return
 	}
-	if fire && p.now >= p.shortedUntil && (m.mech || p.practice()) && sl.cooldown <= 0.12 && inRange && (seen || recent) {
+	if fire && (m.mech || p.practice()) && sl.cooldown <= 0.12 && inRange && (seen || recent) {
 		cmd.Fire[i] = true
 	}
 }

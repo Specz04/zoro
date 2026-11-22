@@ -126,44 +126,43 @@ type Pilot struct {
 	cands     []candidate
 
 	// decision state
-	mode         string
-	targetID     int
-	retreating   bool
-	retreatT     float64
-	corneredT    float64
-	coverCell    int
-	coverT       float64
-	deepCell     int
-	deepT        float64
-	deepTryT     float64
-	slipCell     int
-	slipT        float64
-	slipOnT      float64
-	edgeOnT      float64
-	unquietT     float64
-	holdCell     int
-	holdT        float64
-	scan         float64
-	takeT        float64
-	lootID       int
-	bans         map[int]float64 // loot ids (and negative roam cells) we gave up on, until when
-	work         workLog
-	myRegion     int32
-	zoneCache    zoneCache
-	explore      exploreMap
-	roof         roofPlan
-	duckCell     int
-	duckT        float64
-	duckHoldT    float64
-	holdClimb    bool
-	pinnedRoof   bool
-	lob          lobby
-	prevCharge   float64 // our laser's charge in the previous observation
-	amb          ambushPlan
-	shortedUntil float64 // our laser is shorted out by lightning until then
-	seekBans     map[int]float64
-	jinkDir      float64
-	jinkT        float64
+	mode       string
+	targetID   int
+	retreating bool
+	retreatT   float64
+	corneredT  float64
+	coverCell  int
+	coverT     float64
+	deepCell   int
+	deepT      float64
+	deepTryT   float64
+	slipCell   int
+	slipT      float64
+	slipOnT    float64
+	edgeOnT    float64
+	unquietT   float64
+	holdCell   int
+	holdT      float64
+	scan       float64
+	takeT      float64
+	lootID     int
+	bans       map[int]float64 // loot ids (and negative roam cells) we gave up on, until when
+	work       workLog
+	myRegion   int32
+	zoneCache  zoneCache
+	explore    exploreMap
+	roof       roofPlan
+	duckCell   int
+	duckT      float64
+	duckHoldT  float64
+	holdClimb  bool
+	pinnedRoof bool
+	lob        lobby
+	prevCharge float64 // our laser's charge in the previous observation
+	amb        ambushPlan
+	seekBans   map[int]float64
+	jinkDir    float64
+	jinkT      float64
 }
 
 // New builds a pilot for the match announced by h.

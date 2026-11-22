@@ -202,10 +202,6 @@ func (p *Pilot) event(e *wire.Event) {
 			c.IHitT = p.now
 			c.IHit += e.Amount
 		}
-	case "effect":
-		if e.Effect == "short" {
-			p.shortedUntil = math.Max(p.shortedUntil, p.now+p.cfg.Weapon("lightning").Get("short_s", 2))
-		}
 	case "kill":
 		p.kills++
 		delete(p.contacts, e.Target)

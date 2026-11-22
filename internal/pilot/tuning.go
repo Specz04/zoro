@@ -74,11 +74,6 @@ type Tuning struct {
 	KillUps        bool    // upgrade order that puts our damage (laser damage, gun magazine) first
 	Ambush         float64 // against the squad, watch a landing supply drop from about this far (0 = off)
 	AmbushHP       float64 // ... only above this share of our health
-	AmbushReach    float64 // ... for drops no farther than this
-	TriggerGun     float64 // fire the gun when the aim is within this many target radii (sideways)
-	TriggerPitch   float64 // ... and this many times the usual pitch tolerance
-	TriggerBeam    float64 // let a full laser charge go within this many target radii
-	CloseDuel      bool    // against the squad, fight from 18-42 m, where every gun shot lands
 	SquadKiteMin   float64
 	SquadKiteMax   float64
 
@@ -188,11 +183,6 @@ func Defaults() Tuning {
 		KillUps:        false,
 		Ambush:         60,
 		AmbushHP:       0.6,
-		AmbushReach:    320,
-		TriggerGun:     0.8,
-		TriggerPitch:   1,
-		TriggerBeam:    0.75,
-		CloseDuel:      false,
 		SquadKiteMin:   130,
 		SquadKiteMax:   190,
 
