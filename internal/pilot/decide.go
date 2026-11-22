@@ -226,7 +226,7 @@ func (p *Pilot) carefulResponse(tn *turn) {
 	hostile := p.now-c.HitMeT < p.T.HostileMemory ||
 		(c.Laser && c.Charging && p.now-c.FacedT < 0.4) ||
 		(c.Laser && c.Visible && p.now-c.FacedT < 0.6) // a laser on us is a third of our health about to go
-	provoked := hostile || tgt.d < p.T.FarRange
+	provoked := hostile || tgt.d < p.T.ProvokeRange
 	far := tgt.d >= p.T.FarRange && tgt.adv < p.T.FarEdge
 	heavy := c.Laser || p.hurtRecent/3 > p.T.LightFireDPS || tn.hpFrac < 0.5 || tn.engaged >= 2
 	// hysteresis: a borderline estimate must not flip us between the firing line and cover
@@ -677,7 +677,7 @@ func (p *Pilot) modeIdle(tn *turn) {
 		}
 		return
 	}
-	if tn.hpFrac >= 0.7 && p.o.Self.Cubes < tn.st.wantCubes && (!tn.roofPlan || (!p.armed() && tn.quiet)) {
+	if (p.T.Roam || tn.st.squad) && tn.hpFrac >= 0.7 && p.o.Self.Cubes < tn.st.wantCubes && (!tn.roofPlan || (!p.armed() && tn.quiet)) {
 		if x, y, ok := p.exploreGoal(); ok {
 			p.mode = "explore"
 			p.walkTo(tn, x, y, 1.5, false)

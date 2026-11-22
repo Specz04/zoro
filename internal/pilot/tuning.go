@@ -15,6 +15,7 @@ type Tuning struct {
 	HuntRange     float64 // hunt targets inside this range
 	HostileMemory float64 // a mech that hurt us stays an attacker this long
 	FarRange      float64 // beyond this an exchange without an edge is declined
+	ProvokeRange  float64 // a mech in view this close counts as provoking us even if it has not fired
 	FarEdge       float64 // ... the advantage that counts as an edge
 	BigEdge       float64 // an advantage so large the fight is as good as won
 	CoverReach    float64 // path length we accept to reach cover
@@ -70,6 +71,7 @@ type Tuning struct {
 	CrateGiveUp float64 // seconds at a crate without hurting it before we leave it alone
 	DroneGiveUp float64
 	QuietHold   float64 // seconds without watchers before we call it quiet
+	Roam        bool    // free-for-all: go exploring when there is nothing to fetch
 
 	// roofs
 	UseRoofs      bool
@@ -98,6 +100,7 @@ func Defaults() Tuning {
 		HuntRange:     130,
 		HostileMemory: 4,
 		FarRange:      85,
+		ProvokeRange:  85,
 		FarEdge:       1.25,
 		BigEdge:       3.0,
 		CoverReach:    55,
@@ -150,13 +153,14 @@ func Defaults() Tuning {
 		CrateGiveUp: 5,
 		DroneGiveUp: 8,
 		QuietHold:   3,
+		Roam:        true,
 
 		UseRoofs:      true,
 		RoofMaxClimb:  40,
 		RoofMinHeight: 12,
 		RoofMinZone:   60,
-		RoofCubes:     6,
-		RoofAfter:     60,
+		RoofCubes:     0,
+		RoofAfter:     0,
 		RoofDuckHold:  6,
 		RoofLeaveCalm: 25,
 		ClimbClear:    150,
