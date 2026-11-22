@@ -170,7 +170,7 @@ func Defaults() Tuning {
 		Backstab:       1.3,
 		LaserReady:     true,
 		EndgameT:       250,
-		EndgameR:       140,
+		EndgameR:       80,
 		FinalTight:     true,
 		TopUp:          0.5,
 		CoverCycle:     30,
