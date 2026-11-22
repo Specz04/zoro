@@ -128,7 +128,7 @@ func Defaults() Tuning {
 		DropRun:        0,
 		DropRunHP:      0.85,
 		DropRunLead:    4,
-		Seek:           0,
+		Seek:           30,
 		SeekRange:      320,
 		SeekHP:         0.7,
 		Jink:           0,
